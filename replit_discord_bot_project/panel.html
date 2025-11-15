@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discord Bot Command Panel — Blockly + Export</title>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <style>
+    :root{--sidebar-width:340px}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;margin:0;display:grid;grid-template-columns:1fr var(--sidebar-width);height:100vh}
+    #blocklyDiv{height:100vh;width:100%}
+    #sidebar{padding:16px;box-shadow:-2px 0 8px rgba(0,0,0,.06);background:#fbfbfd;overflow:auto}
+    h1{font-size:18px;margin:0 0 8px}
+    .section{margin-bottom:16px}
+    button{display:inline-block;padding:8px 12px;border-radius:8px;border:0;background:#3b82f6;color:white;cursor:pointer}
+    button.secondary{background:#6b7280}
+    pre{background:#0f172a;color:#e6eef8;padding:12px;border-radius:8px;overflow:auto}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-bottom:8px}
+    .small{font-size:13px;color:#6b7280}
+  </style>
+</head>
+<body>
+  <div id="blocklyDiv"></div>
+
+  <div id="sidebar">
+    <h1>Command Panel (Alle features)</h1>
+    <div class="section">
+      <div class="small">Gebruik de blokken om commands te bouwen zoals BotGhost: triggers, replies, embeds, role actions, components, timeouts, AI-responses, en meer.</div>
+    </div>
+
+    <div class="section">
+      <button onclick="generateCode()">Genereer Python (discord.py)</button>
+      <button class="secondary" onclick="downloadCode()">Download .py</button>
+      <button class="secondary" onclick="copyCode()">Kopieer naar klembord</button>
+    </div>
+
+    <div class="section">
+      <label>Gegenereerde code</label>
+      <pre id="code" style="height:220px">// Klik op 'Genereer Python' om code te laten zien.</pre>
+    </div>
+
+    <div class="section">
+      <label>Quick-instructies / Replit</label>
+      <div class="small">
+        1) Maak een nieuwe Replit (Python).<br>
+        2) Voeg een bestand `bot.py` toe met de gedownloade code.<br>
+        3) Zet je Discord Token in Secrets (Environment) als `DISCORD_TOKEN`.<br>
+        4) Start een eenvoudige Flask webserver of gebruik uptime robot voor 24/7.
+      </div>
+    </div>
+
+    <div class="section">
+      <label>Voorbeeld templates</label>
+      <button onclick="loadTemplate('ping')">Laad Ping Template</button>
+      <button onclick="loadTemplate('embed')">Laad Embed Template</button>
+    </div>
+
+    <div class="section">
+      <label>Export opties</label>
+      <select id="prefixSelect">
+        <option value="!">Prefix: !</option>
+        <option value="/">Prefix: /</option>
+        <option value=".">Prefix: .</option>
+      </select>
+      <label>Bot naam (optioneel)</label>
+      <input id="botName" placeholder="Laat leeg om huidige naam te gebruiken" />
+    </div>
+
+    <div class="section">
+      <label>Hulp</label>
+      <div class="small">Wil je extra blokken (webhooks, database, multi-language)? Klik "Laad Embed Template" en bewerk, of vraag me direct om een Replit project te genereren.</div>
+    </div>
+  </div>
+
+  <xml id="toolbox" style="display:none">
+    <category name="Triggers" colour="210">
+      <block type="on_command"></block>
+      <block type="on_message_contains"></block>
+      <block type="on_reaction_add"></block>
+    </category>
+
+    <category name="Actions" colour="120">
+      <block type="send_message"></block>
+      <block type="send_embed"></block>
+      <block type="send_dm"></block>
+      <block type="add_role"></block>
+      <block type="remove_role"></block>
+      <block type="wait_block"></block>
+      <block type="delete_message"></block>
+    </category>
+
+    <category name="Components" colour="330">
+      <block type="send_buttons"></block>
+      <block type="send_select"></block>
+    </category>
+
+    <category name="Advanced" colour="160">
+      <block type="ai_response"></block>
+      <block type="set_nickname"></block>
+      <block type="set_prefix"></block>
+    </category>
+
+    <category name="Text" colour="0">
+      <block type="text"></block>
+      <block type="text_join"></block>
+    </category>
+  </xml>
+
+  <script>
+    const workspace = Blockly.inject('blocklyDiv', {toolbox: document.getElementById('toolbox')});
+
+    // Define blocks
+    Blockly.defineBlocksWithJsonArray([
+      {
+        "type": "on_command",
+        "message0": "Wanneer command %1 gebruikt wordt (naam zonder prefix)",
+        "args0": [{"type":"field_input","name":"CMD","text":"ping"}],
+        "message1": "%1",
+        "args1": [{"type":"input_statement","name":"DO"}],
+        "colour":210
+      },
+      {
+        "type": "on_message_contains",
+        "message0": "Wanneer bericht bevat %1",
+        "args0": [{"type":"field_input","name":"TXT","text":"hello"}],
+        "message1": "%1",
+        "args1": [{"type":"input_statement","name":"DO"}],
+        "colour":210
+      },
+      {
+        "type":"on_reaction_add",
+        "message0":"Wanneer reactie %1 wordt toegevoegd",
+        "args0":[{"type":"field_input","name":"REA","text":"👍"}],
+        "message1":"%1",
+        "args1":[{"type":"input_statement","name":"DO"}],
+        "colour":210
+      },
+
+      {"type":"send_message","message0":"stuur bericht %1","args0":[{"type":"input_value","name":"MSG"}],"previousStatement":null,"colour":120},
+      {"type":"send_dm","message0":"stuur DM naar gebruiker %1 bericht %2","args0":[{"type":"input_value","name":"USER"},{"type":"input_value","name":"MSG"}],"previousStatement":null,"colour":120},
+
+      {"type":"send_embed","message0":"stuur embed titel %1 beschrijving %2 kleur #hex %3","args0":[{"type":"input_value","name":"TITLE"},{"type":"input_value","name":"DESC"},{"type":"field_input","name":"COLOR","text":"3498db"}],"previousStatement":null,"colour":120},
+
+      {"type":"add_role","message0":"geef role ID %1 aan gebruiker %2","args0":[{"type":"field_input","name":"ROLE","text":"123456789"},{"type":"input_value","name":"USER"}],"previousStatement":null,"colour":120},
+      {"type":"remove_role","message0":"verwijder role ID %1 van gebruiker %2","args0":[{"type":"field_input","name":"ROLE","text":"123456789"},{"type":"input_value","name":"USER"}],"previousStatement":null,"colour":120},
+
+      {"type":"wait_block","message0":"wacht %1 seconden","args0":[{"type":"field_number","name":"SEC","value":1,"min":0}],"previousStatement":null,"colour":120},
+      {"type":"delete_message","message0":"verwijder bericht","previousStatement":null,"colour":120},
+
+      {"type":"send_buttons","message0":"stuur buttons %1 labels (comma gescheiden) %2","args0":[{"type":"field_input","name":"ID","text":"btn_group"},{"type":"field_input","name":"LABELS","text":"Yes,No"}],"previousStatement":null,"colour":330},
+      {"type":"send_select","message0":"stuur select %1 opties (comma) %2","args0":[{"type":"field_input","name":"ID","text":"sel1"},{"type":"field_input","name":"OPTS","text":"opt1,opt2"}],"previousStatement":null,"colour":330},
+
+      {"type":"ai_response","message0":"AI antwoord via webhook %1 prompt %2","args0":[{"type":"field_input","name":"URL","text":"https://api.openai.example/endpoint"},{"type":"input_value","name":"PROMPT"}],"previousStatement":null,"colour":160},
+
+      {"type":"set_nickname","message0":"zet nickname van bot naar %1","args0":[{"type":"input_value","name":"NAME"}],"previousStatement":null,"colour":160},
+      {"type":"set_prefix","message0":"zet prefix naar %1","args0":[{"type":"field_input","name":"P","text":"!"}],"previousStatement":null,"colour":160}
+    ]);
+
+    // Reuse default text blocks
+    Blockly.JavaScript['text'] = Blockly.JavaScript['text'];
+    Blockly.JavaScript['text_join'] = Blockly.JavaScript['text_join'];
+
+    // Code generator to Python (discord.py v2 style)
+    function pyEscape(s){ return s.replace(/\\/g,'\\\\').replace(/\\"/g,'\\\\"').replace(/\\n/g,'\\\\n'); }
+
+    Blockly.Python = Blockly.Generator.get('Python');
+
+    Blockly.Python['on_command'] = function(block){
+      const cmd = block.getFieldValue('CMD');
+      const statements = Blockly.Python.statementToCode(block,'DO');
+      const prefix = document.getElementById('prefixSelect').value || '!';
+      return `@bot.command(name=\"${cmd}\")\\ndef ${cmd.replace(/[^a-zA-Z0-9_]/g,'_')}(ctx):\\n${indent(statements)}\\n\\n`;
+    };
+
+    Blockly.Python['on_message_contains'] = function(block){
+      const txt = block.getFieldValue('TXT');
+      const statements = Blockly.Python.statementToCode(block,'DO');
+      return `@bot.listen('on_message')\\nasync def on_msg_contains(message):\\n  if message.author.bot: return\\n  if \"${pyEscape(txt)}\" in message.content:\\n${indent(statements,2)}\\n\\n`;
+    };
+
+    Blockly.Python['on_reaction_add'] = function(block){
+      const rea = block.getFieldValue('REA');
+      const statements = Blockly.Python.statementToCode(block,'DO');
+      return `@bot.event\\nasync def on_reaction_add(reaction, user):\\n  if str(reaction.emoji) == \"${pyEscape(rea)}\":\\n${indent(statements,2)}\\n\\n`;
+    };
+
+    Blockly.Python['send_message'] = function(block){
+      const msg = Blockly.Python.valueToCode(block,'MSG',Blockly.Python.ORDER_NONE) || "''";
+      return `await ctx.send(${msg})\\n`;
+    };
+
+    Blockly.Python['send_dm'] = function(block){
+      const user = Blockly.Python.valueToCode(block,'USER',Blockly.Python.ORDER_NONE) || 'user'
+      const msg = Blockly.Python.valueToCode(block,'MSG',Blockly.Python.ORDER_NONE) || "''"
+      return `user = ${user}\\nawait user.send(${msg})\\n`;
+    };
+
+    Blockly.Python['send_embed'] = function(block){
+      const title = Blockly.Python.valueToCode(block,'TITLE',Blockly.Python.ORDER_NONE) || "''";
+      const desc = Blockly.Python.valueToCode(block,'DESC',Blockly.Python.ORDER_NONE) || "''";
+      const color = block.getFieldValue('COLOR') || '3498db';
+      return `embed = discord.Embed(title=${title}, description=${desc}, color=int('0x${color}',16))\\nawait ctx.send(embed=embed)\\n`;
+    };
+
+    Blockly.Python['add_role'] = function(block){
+      const roleId = block.getFieldValue('ROLE');
+      const user = Blockly.Python.valueToCode(block,'USER',Blockly.Python.ORDER_NONE) || 'member'
+      return `role = discord.utils.get(ctx.guild.roles, id=int(${roleId}))\\nawait ${user}.add_roles(role)\\n`;
+    };
+
+    Blockly.Python['remove_role'] = function(block){
+      const roleId = block.getFieldValue('ROLE');
+      const user = Blockly.Python.valueToCode(block,'USER',Blockly.Python.ORDER_NONE) || 'member'
+      return `role = discord.utils.get(ctx.guild.roles, id=int(${roleId}))\\nawait ${user}.remove_roles(role)\\n`;
+    };
+
+    Blockly.Python['wait_block'] = function(block){
+      const sec = Number(block.getFieldValue('SEC'))||0
+      return `await asyncio.sleep(${sec})\\n`;
+    };
+
+    Blockly.Python['delete_message'] = function(block){
+      return `await ctx.message.delete()\\n`;
+    };
+
+    Blockly.Python['send_buttons'] = function(block){
+      const id = block.getFieldValue('ID');
+      const labels = block.getFieldValue('LABELS');
+      return `class ${id}_View(discord.ui.View):\\n  def __init__(self):\\n    super().__init__()\\n\\n${labels.split(',').map((l,i)=>`  @discord.ui.button(label=\"${l.trim()}\", style=discord.ButtonStyle.primary, custom_id=\"${id}_${i}\")\\n  async def btn_${i}(self, interaction, button):\\n    await interaction.response.send_message(\"Je klikte: ${l.trim()}\", ephemeral=True)\\n`).join('')}\\n\\nview = ${id}_View()\\nawait ctx.send('Kies een optie:', view=view)\\n`;
+    };
+
+    Blockly.Python['send_select'] = function(block){
+      const id = block.getFieldValue('ID');
+      const opts = block.getFieldValue('OPTS');
+      return `# Select menu voorbeeld (discord.ui.Select)\\nclass ${id}_Select(discord.ui.Select):\\n  def __init__(self):\\n    options=[discord.SelectOption(label=o.strip()) for o in \"${opts}\".split(',')]\\n    super().__init__(placeholder=\"Kies...\", min_values=1, max_values=1, options=options)\\n  async def callback(self, interaction):\\n    await interaction.response.send_message(\"Gekozen: {self.values[0]}\", ephemeral=True)\\n\\nclass ${id}_View(discord.ui.View):\\n  def __init__(self):\\n    super().__init__()\\n    self.add_item(${id}_Select())\\n\\nview = ${id}_View()\\nawait ctx.send('Select één:', view=view)\\n`;
+    };
+
+    Blockly.Python['ai_response'] = function(block){
+      const url = block.getFieldValue('URL');
+      const prompt = Blockly.Python.valueToCode(block,'PROMPT',Blockly.Python.ORDER_NONE) || "''";
+      return `# AI webhook request (pas aan)\\nimport aiohttp\\nasync with aiohttp.ClientSession() as session:\\n  async with session.post(\"${url}\", json={\"prompt\": ${prompt}}) as r:\\n    data = await r.json()\\n    await ctx.send(data.get('reply','Geen antwoord'))\\n`;
+    };
+
+    Blockly.Python['set_nickname'] = function(block){
+      const name = Blockly.Python.valueToCode(block,'NAME',Blockly.Python.ORDER_NONE)||"'Bot'";
+      return `await bot.user.edit(username=${name})\\n`;
+    };
+
+    Blockly.Python['set_prefix'] = function(block){
+      const p = block.getFieldValue('P');
+      return `# Let op: prefix veranderen vereist herstart/aanpassing aan command handler\\nPREFIX = \"${p}\"\\n`;
+    };
+
+    // Helpers
+    function indent(s,level=1){
+      if(!s) return '  pass\\n';
+      return s.split('\\n').map(l=> l? ('  '.repeat(level)+l) : l).join('\\n');
+    }
+
+    function generateCode(){
+      // Boilerplate header
+      const header = `import discord\\nfrom discord.ext import commands\\nimport asyncio\\n\\nTOKEN = os.getenv('DISCORD_TOKEN') if 'os' in globals() else 'YOUR_TOKEN'\\nPREFIX = '${document.getElementById('prefixSelect').value}'\\nbot = commands.Bot(command_prefix=PREFIX, intents=discord.Intents.all())\\n\\n`;
+      const body = Blockly.Python.workspaceToCode(workspace);
+      const footer = `@bot.event\\nasync def on_ready():\\n  print('Bot is ready as', bot.user)\\n\\nbot.run(TOKEN)\\n`;
+      const botName = document.getElementById('botName').value.trim();
+      const final = header + body + footer;
+      document.getElementById('code').textContent = final;
+      generatedCode = final;
+    }
+
+    // Expose functions for buttons
+    window.generateCode = generateCode;
+
+    let generatedCode = '';
+
+    function downloadCode(){
+      if(!generatedCode) generateCode();
+      const blob = new Blob([generatedCode], {type: 'text/x-python'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'bot.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    function copyCode(){
+      if(!generatedCode) generateCode();
+      navigator.clipboard.writeText(generatedCode).then(()=> alert('Gekopieerd!'));
+    }
+
+    window.downloadCode = downloadCode; window.copyCode = copyCode;
+
+    // Templates
+    function loadTemplate(t){
+      workspace.clear();
+      if(t==='ping'){
+        const xmlText = `<xml xmlns='http://www.w3.org/1999/xhtml'><block type='on_command' x='20' y='20'><field name='CMD'>ping</field><statement name='DO'><block type='send_message'><value name='MSG'><block type='text'><field name='TEXT'>Pong!</field></block></value></block></statement></block></xml>`;
+        Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xmlText), workspace);
+      }
+      if(t==='embed'){
+        const xmlText = `<xml xmlns='http://www.w3.org/1999/xhtml'><block type='on_command' x='20' y='20'><field name='CMD'>info</field><statement name='DO'><block type='send_embed'><value name='TITLE'><block type='text'><field name='TEXT'>Info</field></block></value><value name='DESC'><block type='text'><field name='TEXT'>Dit is een embed gemaakt via het command panel.</field></block></value><field name='COLOR'>3498db</field></block></statement></block></xml>`;
+        Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xmlText), workspace);
+      }
+    }
+
+    window.loadTemplate = loadTemplate;
+
+    // Initialize with a sample workspace
+    loadTemplate('ping');
+  </script>
+</body>
+</html>
