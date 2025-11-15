@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Discord Bot GUI</title>
+</head>
+<body>
+    <h1>Bot Instellingen</h1>
+    <h2>Custom Commands</h2>
+
+    <ul>
+        {% for name, response in commands.items() %}
+            <li><b>{{ name }}</b>: {{ response }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Nieuw command</h3>
+    <form action="/add" method="post">
+        <input type="text" name="name" placeholder="command naam (zonder !)">
+        <input type="text" name="response" placeholder="antwoord">
+        <button type="submit">Opslaan</button>
+    </form>
+</body>
+</html>
